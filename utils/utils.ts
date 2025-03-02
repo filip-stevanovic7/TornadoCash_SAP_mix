@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { bigint } from "hardhat/internal/core/params/argumentTypes";
-import { buildPedersenHash, PedersenHash } from "circomlibjs";
+import { buildPedersenHash, PedersenHash, buildMimcSponge } from "circomlibjs";
+import { HashFunction, Element } from "fixed-merkle-tree";
 
 const BYTES_SIZE = 31; // 248 bits, Whitepaper parameter
 
@@ -20,6 +21,19 @@ const pedersenHash = async (data: Buffer): Promise<bigint> => {
   // Convert to bigint
   return bufferToBigInt(normalForm);
 };
+
+async function mimcHasher(): Promise<HashFunction<Element>> {
+  const mimc = await buildMimcSponge();
+
+  const hasher: HashFunction<Element> = (
+    left: Element,
+    right: Element
+  ): string => {
+    return mimc.F.toString(mimc.multiHash([left, right]));
+  };
+
+  return hasher;
+}
 
 // Little endian
 function bufferToBigInt(buffer: Buffer): bigint {
@@ -74,6 +88,7 @@ async function generateCommitment(): Promise<{
 
 export {
   pedersenHash,
+  mimcHasher,
   bigIntToHex,
   bigIntToBuffer,
   hexToBigint,
