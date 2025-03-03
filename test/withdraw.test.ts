@@ -1,8 +1,8 @@
 import { zkit } from "hardhat";
 import { expect } from "chai";
 import { CalldataWithdrawGroth16, Withdraw } from "@zkit";
-// import { WithdrawGroth16Verifier__factory } from "../typechain-types";
-// import { WithdrawGroth16Verifier } from "../typechain-types";
+import { WithdrawGroth16Verifier__factory } from "../typechain-types";
+import { WithdrawGroth16Verifier } from "../typechain-types";
 import hre from "hardhat";
 import {
   generateCommitment,
@@ -14,15 +14,15 @@ import { PrivateWithdrawGroth16 } from "@zkit";
 
 describe("Withdraw Test", () => {
   let circuit: Withdraw;
-  // let verifier: WithdrawGroth16Verifier;
+  let verifier: WithdrawGroth16Verifier;
   let recipient = hre.ethers.Wallet.createRandom().address;
 
   beforeEach(async () => {
     circuit = await zkit.getCircuit("Withdraw");
-    // const VerifierFactory: WithdrawGroth16Verifier__factory =
-    //   await hre.ethers.getContractFactory("WithdrawGroth16Verifier");
-    // verifier = await VerifierFactory.deploy();
-    // await verifier.waitForDeployment();
+    const VerifierFactory: WithdrawGroth16Verifier__factory =
+      await hre.ethers.getContractFactory("WithdrawGroth16Verifier");
+    verifier = await VerifierFactory.deploy();
+    await verifier.waitForDeployment();
   });
 
   it("should verify witness generation and proof", async () => {
@@ -51,15 +51,15 @@ describe("Withdraw Test", () => {
     console.log("input", input);
 
     await expect(circuit).with.witnessInputs(input).to.have.witnessOutputs({});
-    // await expect(circuit).to.generateProof(input);
+    await expect(circuit).to.generateProof(input);
 
     const proof = await circuit.generateProof(input);
     // console.log("proof", proof);
-    const isValid = await circuit.verifyProof(proof);
-    expect(isValid).to.be.true;
-    // await expect(circuit)
-    //   .to.useSolidityVerifier(verifier)
-    //   .and.verifyProof(proof);
+    // const isValid = await circuit.verifyProof(proof);
+    // expect(isValid).to.be.true;
+    await expect(circuit)
+      .to.useSolidityVerifier(verifier)
+      .and.verifyProof(proof);
   });
 
   it("should fail with incorrect nullifier", async () => {
@@ -113,40 +113,40 @@ describe("Withdraw Test", () => {
     );
   });
 
-  // it("should fail with tampered proof", async () => {
-  //   const { nullifier, secret, commitment } = await generateCommitment();
-  //   const tree = await createTree();
-  //   tree.insert(commitment.toString());
+  it("should fail with tampered proof", async () => {
+    const { nullifier, secret, commitment } = await generateCommitment();
+    const tree = await createTree();
+    tree.insert(commitment.toString());
 
-  //   const { pathElements, pathIndices } = tree.path(
-  //     tree.indexOf(commitment.toString())
-  //   );
+    const { pathElements, pathIndices } = tree.path(
+      tree.indexOf(commitment.toString())
+    );
 
-  //   const input: PrivateWithdrawGroth16 = {
-  //     secret,
-  //     nullifier,
-  //     root: BigInt(tree.root),
-  //     nullifierHash: await pedersenHash(bigIntToBuffer(nullifier, 31)),
-  //     pathElements: pathElements.map((el) => BigInt(el)),
-  //     pathIndices,
-  //     recipient: BigInt(recipient),
-  //   };
+    const input: PrivateWithdrawGroth16 = {
+      secret,
+      nullifier,
+      root: BigInt(tree.root),
+      nullifierHash: await pedersenHash(bigIntToBuffer(nullifier, 31)),
+      pathElements: pathElements.map((el) => BigInt(el)),
+      pathIndices,
+      recipient: BigInt(recipient),
+    };
 
-  //   const proof = await circuit.generateProof(input);
-  //   const calldata: CalldataWithdrawGroth16 =
-  //     await circuit.generateCalldata(proof);
+    const proof = await circuit.generateProof(input);
+    const calldata: CalldataWithdrawGroth16 =
+      await circuit.generateCalldata(proof);
 
-  //   const tamperedCalldata: CalldataWithdrawGroth16 = [
-  //     [calldata[0][1], calldata[0][0]],
-  //     calldata[1],
-  //     calldata[2],
-  //     calldata[3],
-  //   ];
+    const tamperedCalldata: CalldataWithdrawGroth16 = [
+      [calldata[0][1], calldata[0][0]],
+      calldata[1],
+      calldata[2],
+      calldata[3],
+    ];
 
-  //   const validResult = await verifier.verifyProof(...calldata);
-  //   expect(validResult).to.be.true;
+    const validResult = await verifier.verifyProof(...calldata);
+    expect(validResult).to.be.true;
 
-  //   const invalidResult = await verifier.verifyProof(...tamperedCalldata);
-  //   expect(invalidResult).to.be.false;
-  // });
+    const invalidResult = await verifier.verifyProof(...tamperedCalldata);
+    expect(invalidResult).to.be.false;
+  });
 });
