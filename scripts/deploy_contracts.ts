@@ -62,4 +62,19 @@ async function deployContracts(address: string): Promise<ETHTornado> {
   return tornado;
 }
 
-export { deployContracts };
+
+async function main() {
+  try {
+      // Get the signers
+      const [deployer] = await hre.ethers.getSigners();
+      await deployContracts(deployer.address);
+  
+    } catch (error) {
+      console.error("Error deploying and testing MerkleTree:", error);
+      process.exit(1);
+    }
+}
+
+main();
+
+// export { deployContracts };

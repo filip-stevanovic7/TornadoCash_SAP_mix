@@ -1,4 +1,4 @@
-import { deployContracts } from "./deploy_contracts";
+// import { deployContracts } from "./deploy_contracts";
 import { deposit } from "./deposit";
 import { withdraw } from "./withdraw";
 import { generateCommitment, pedersenHash, bigIntToBuffer } from "../utils/utils";
@@ -6,6 +6,7 @@ import { createTree } from "../utils/tree";
 import { PrivateWithdrawGroth16 } from "@zkit";
 import { zkit } from "hardhat";
 import hre from "hardhat";
+import { ETHTornado__factory } from "../typechain-types";
 
 async function main() {
     try {
@@ -13,7 +14,10 @@ async function main() {
         const [deployer, user1, user2] = await hre.ethers.getSigners();
 
         // Deploy the ETHTornado contract
-        const tornado = await deployContracts(deployer.address);
+        // const tornado = await deployContracts(deployer.address);
+        // Connect to the existing ETHTornado contract
+        const tornadoAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+        const tornado = ETHTornado__factory.connect(tornadoAddress, deployer);
 
         // Listen for Deposit and Withdrawal events
         const depositListener = (event: any) => {
