@@ -6,8 +6,6 @@ import { createTree } from "../utils/tree";
 import { PrivateWithdrawGroth16 } from "@zkit";
 import { zkit } from "hardhat";
 import hre from "hardhat";
-import { TypedListener } from "../typechain-types/common";
-import { DepositEvent, WithdrawalEvent } from "../typechain-types/ETHTornado";
 
 async function main() {
     try {
