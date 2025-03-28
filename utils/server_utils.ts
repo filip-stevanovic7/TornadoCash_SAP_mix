@@ -61,15 +61,27 @@ async function withdraw(
   hre: any
 ) {
   logger.startBlock("STARTING WITHDRAW PROCESS");
-  logger.info(
-    `💰 Recipient balance before withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
-  );
-  const calldata = await circuit.generateCalldata(proof);
-  await tornado.withdraw(...calldata);
-  logger.success(
-    `🤑 Recipient balance after withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
-  );
-  logger.endBlock("WITHDRAW SUCCESSFULL");
+
+  try {
+    // Get the signer
+    const signer = await hre.ethers.getSigner(recipient);
+    // Connect the contract instance to the signer
+    const tornadoWithSigner = tornado.connect(signer);
+    logger.info(
+      `💰 Recipient balance before withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
+    );
+    const calldata = await circuit.generateCalldata(proof);
+    await tornadoWithSigner.withdraw(...calldata);
+    logger.success(
+      `🤑 Recipient balance after withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
+    );
+    logger.endBlock("WITHDRAW SUCCESSFULL");
+    
+  } catch (e: any) {
+    logger.endBlock("DEPOSIT FAILED", false);
+    logger.error(e);
+    process.exit(1);
+  }
 }
 
 

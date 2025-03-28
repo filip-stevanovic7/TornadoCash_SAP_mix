@@ -7,17 +7,16 @@ import { PrivateWithdrawGroth16 } from "@zkit";
 import { pedersenHash, bigIntToBuffer, bigIntToHex } from "../utils/utils";
 import { ETHTornado, ETHTornado__factory } from "../typechain-types";
 import MerkleTree from "fixed-merkle-tree";
-
-// import { zkit } from "hardhat";
-// import hre from "hardhat";
+import { zkit } from "hardhat";
+import hre from "hardhat";
 // import { run } from "hardhat";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+// import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-async function getHRE(): Promise<HardhatRuntimeEnvironment> {
-  process.env.HARDHAT_NETWORK = "localhost"; 
-  const hre = require("hardhat");
-  return hre;  
-}
+// async function getHRE(): Promise<HardhatRuntimeEnvironment> {
+//   process.env.HARDHAT_NETWORK = "localhost"; 
+//   const hre = require("hardhat");
+//   return hre;  
+// }
 
 const app = express();
 const PORT = 3000;
@@ -84,7 +83,7 @@ app.post("/deposit", async (req, res) => {
     console.log("User address:", userAddress);
 
     // Initialize Hardhat runtime environment
-    const hre = await getHRE();
+    // const hre = await getHRE();
 
     console.log("Using contract at address:", tornado.target);
 
@@ -115,21 +114,22 @@ app.post("/deposit", async (req, res) => {
 // Endpoint to withdraw
 app.post("/withdraw", async (req, res) => {
   try {
+    console.log("Withdraw request body:", req.body);
     const { nullifier, secret, root, pathIndices, pathElements, userAddress } = req.body;
 
     // Generating recipient
     const recipient = userAddress;
 
     // Initialize Hardhat runtime environment
-    const hre = await getHRE();
+    // const hre = await getHRE();
 
     // Create circuit representation
-    // const circuit = await hre.zkit.getCircuit("Withdraw");
-    const circuit = await hre.run("zkit:getCircuit", { name: "Withdraw" });
+    const circuit = await zkit.getCircuit("Withdraw");
+    // const circuit = await hre.run("zkit:getCircuit", { name: "Withdraw" });
     // Create inputs
     const input: PrivateWithdrawGroth16 = {
       root,
-      nullifierHash: await pedersenHash(bigIntToBuffer(nullifier, 31)),
+      nullifierHash: await pedersenHash(bigIntToBuffer(BigInt(nullifier), 31)),
       nullifier,
       secret,
       pathElements/*: pathElements.map((el) => BigInt(el))*/,
