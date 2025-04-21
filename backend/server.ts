@@ -35,22 +35,37 @@ async function initializeTree() {
   console.log("Merkle tree initialized");
 }
 
-// Listen for Deposit and Withdrawal events
-const depositListener = (event: any) => {
-    try {
-        const _commitment = event.args[0];  // string (hash)
-        const leafIndex = event.args[1];   // BigInt
-        const timestamp = event.args[2];   // BigInt
-    
-        console.log(`Deposit event: commitment=${_commitment}, leafIndex=${leafIndex.toString()}, timestamp=${timestamp.toString()}`);
-    
-        // Insert the commitment into the Merkle tree
-        tree.insert(_commitment);
-      } catch (error) {
-        console.error("Error handling deposit event:", error);
-      }
+const eventQueue: any[] = [];
+let isProcessing = false;
 
-}
+const processEventQueue = async () => {
+  if (isProcessing || eventQueue.length === 0) return;
+
+  isProcessing = true;
+  const event = eventQueue.shift(); // Get the first event in the queue
+
+  try {
+    const _commitment = event.args[0];
+    const leafIndex = event.args[1];
+    const timestamp = event.args[2];
+
+    console.log(`Processing deposit event: commitment=${_commitment}, leafIndex=${leafIndex.toString()}, timestamp=${timestamp.toString()}`);
+
+    // Insert the commitment into the Merkle tree
+    tree.insert(_commitment);
+    console.log(`Commitment inserted into Merkle tree: ${_commitment}`);
+  } catch (error) {
+    console.error("Error processing deposit event:", error);
+  } finally {
+    isProcessing = false;
+    processEventQueue(); // Process the next event
+  }
+};
+
+const depositListener = (event: any) => {
+  eventQueue.push(event); // Add the event to the queue
+  processEventQueue(); // Start processing the queue
+};
 
 const withdrawalListener = (event: any) => {
     console.log("Withdrawal Event Args:", event.args[0]);
