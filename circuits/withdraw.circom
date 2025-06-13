@@ -37,6 +37,10 @@ template Withdraw(levels) {
         tree.pathIndices[i] <== pathIndices[i];
     }
 
+    // Ensure compiler optimizations do not remove recipient
+    signal recipientSquare = recipient * recipient;
+    recipientSquare === recipientSquare; // Dummy operation to use recipient
+
 }
 
 component main { public [root, nullifierHash, recipient] } = Withdraw(20);
