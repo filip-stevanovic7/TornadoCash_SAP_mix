@@ -4,8 +4,6 @@ import { logger } from "../utils/logger";
 
 async function deposit(
   tornado: Tornado,
-  nullifier: bigint,
-  secret: bigint,
   commitment: bigint,
   senderAddress: string,
   hre: any
@@ -13,8 +11,6 @@ async function deposit(
   logger.startBlock("STARTING DEPOSIT PROCESS");
 
   logger.separator();
-  logger.info(`Nullifier:  ${nullifier.toString(16)}`);
-  logger.info(`Secret:     ${secret.toString(16)}`);
   logger.info(`Commitment: ${commitment.toString(16)}`);
   logger.separator();
 

@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import { generateCommitment } from "../utils/utils";
 import { deposit, withdraw } from "../utils/server_utils";
 import { PrivateWithdrawGroth16 } from "@zkit";
-import { pedersenHash, bigIntToBuffer, bigIntToHex } from "../utils/utils";
+import { pedersenHash, bigIntToBuffer, hexToBigint } from "../utils/utils";
 import { ETHTornado, ETHTornado__factory } from "../typechain-types";
 import MerkleTree from "fixed-merkle-tree";
 import { zkit } from "hardhat";
@@ -63,6 +63,7 @@ const processEventQueue = async () => {
 };
 
 const depositListener = (event: any) => {
+  console.log("Deposit Event");
   eventQueue.push(event); // Add the event to the queue
   processEventQueue(); // Start processing the queue
 };
@@ -92,9 +93,10 @@ app.get("/merkle-info/:commitment", (req, res) => {
 // Endpoint to deposit
 app.post("/deposit", async (req, res) => {
   try {
-    const { nullifier, secret, commitment } = await generateCommitment();
+    // const { nullifier, secret, commitment } = await generateCommitment();
     console.log("Body:", req.body);
-    const {userAddress} = req.body;
+    const {commitment, userAddress} = req.body;
+    console.log("Commitment:", commitment);
     console.log("User address:", userAddress);
 
     // Initialize Hardhat runtime environment
@@ -104,21 +106,12 @@ app.post("/deposit", async (req, res) => {
 
     await deposit(
       tornado, 
-      nullifier, 
-      secret, 
-      commitment, 
+      hexToBigint(commitment), 
       userAddress, 
       hre
     );
 
-    
-    const response = {
-      nullifier: bigIntToHex(nullifier),
-      secret: bigIntToHex(secret),
-      commitment: bigIntToHex(commitment),
-    };
-
-    res.status(200).json({ message: "Deposit successful", response });
+    res.status(200).json({ message: "Deposit successful" });
 
   } catch (error) {
     console.error("Error during deposit:", error);
