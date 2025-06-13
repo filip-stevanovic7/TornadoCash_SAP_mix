@@ -38,8 +38,8 @@ template Withdraw(levels) {
     }
 
     // Ensure compiler optimizations do not remove recipient
-    signal recipientSquare = recipient * recipient;
-    recipientSquare === recipientSquare; // Dummy operation to use recipient
+    signal recipientSquare;
+    recipientSquare <== recipient * recipient;
 
 }
 
