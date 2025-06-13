@@ -11,8 +11,33 @@ const config: HardhatUserConfig = {
     },
   },
   zkit: {
-    circuitsDir: "./circuits",
-  },
+    compilerVersion: "2.2.0",
+    circuitsDir: "circuits",
+    compilationSettings: {
+      artifactsDir: "zkit/artifacts",
+      onlyFiles: [],
+      skipFiles: [],
+      c: false,
+      json: false,
+      optimization: "O1",
+    },
+    setupSettings: {
+      contributionSettings: {
+        provingSystem: "groth16", // or "plonk"
+        contributions: 2,
+      },
+      onlyFiles: [],
+      skipFiles: [],
+      ptauDir: undefined,
+      ptauDownload: true,
+    },
+    verifiersSettings: {
+      verifiersDir: "contracts/verifiers",
+      verifiersType: "sol", // or "vy"
+    },
+    typesDir: "generated-types/zkit",
+    quiet: false,
+  }
 };
 
 export default config;
