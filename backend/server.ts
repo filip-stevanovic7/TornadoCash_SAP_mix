@@ -2,7 +2,7 @@ import express from "express";
 import { createTree } from "../utils/tree";
 import { ethers } from "ethers";
 import { generateCommitment } from "../utils/utils";
-import { deposit, withdraw } from "../utils/server_utils";
+import { deposit, withdraw } from "../utils/contract_utils";
 import { PrivateWithdrawGroth16 } from "@zkit";
 import { pedersenHash, bigIntToBuffer, hexToBigint } from "../utils/utils";
 import { ETHTornado, ETHTornado__factory } from "../typechain-types";
@@ -26,8 +26,8 @@ app.use(express.json());
 let tree: MerkleTree;
 
 // Initialize provider and contract
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-const tornadoAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"; // Replace with the actual deployed contract address
+const provider = new hre.ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const tornadoAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
 const tornado = ETHTornado__factory.connect(tornadoAddress, provider);
 
 async function initializeTree() {
@@ -88,79 +88,6 @@ app.get("/merkle-info/:commitment", (req, res) => {
   const root = tree.root;
   res.status(200).json({ root, pathElements, pathIndices });
   return;
-});
-
-// Endpoint to deposit
-app.post("/deposit", async (req, res) => {
-  try {
-    // const { nullifier, secret, commitment } = await generateCommitment();
-    console.log("Body:", req.body);
-    const {commitment, userAddress} = req.body;
-    console.log("Commitment:", commitment);
-    console.log("User address:", userAddress);
-
-    // Initialize Hardhat runtime environment
-    // const hre = await getHRE();
-
-    console.log("Using contract at address:", tornado.target);
-
-    await deposit(
-      tornado, 
-      hexToBigint(commitment), 
-      userAddress, 
-      hre
-    );
-
-    res.status(200).json({ message: "Deposit successful" });
-
-  } catch (error) {
-    console.error("Error during deposit:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Endpoint to withdraw
-app.post("/withdraw", async (req, res) => {
-  try {
-    console.log("Withdraw request body:", req.body);
-    const { nullifier, secret, root, pathIndices, pathElements, userAddress } = req.body;
-
-    // Generating recipient
-    const recipient = userAddress;
-
-    // Initialize Hardhat runtime environment
-    // const hre = await getHRE();
-
-    // Create circuit representation
-    const circuit = await zkit.getCircuit("Withdraw");
-    // const circuit = await hre.run("zkit:getCircuit", { name: "Withdraw" });
-    // Create inputs
-    const input: PrivateWithdrawGroth16 = {
-      root,
-      nullifierHash: await pedersenHash(bigIntToBuffer(BigInt(nullifier), 31)),
-      nullifier,
-      secret,
-      pathElements/*: pathElements.map((el) => BigInt(el))*/,
-      pathIndices,
-      recipient: BigInt(recipient),
-    };
-    // Generate proof
-    const proof = await circuit.generateProof(input);
-
-    // Withdraw
-    await withdraw(
-      tornado,
-      circuit,
-      proof,
-      recipient,
-      hre
-    );
-
-    res.status(200).json({ message: "Withdraw successful" });
-  } catch (error) {
-    console.error("Error during withdraw:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
 });
 
 // Start the server

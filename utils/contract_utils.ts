@@ -1,6 +1,6 @@
-import { bigIntToHex } from "../utils/utils";
+import { bigIntToHex } from "./utils";
 import { Tornado } from "../typechain-types";
-import { logger } from "../utils/logger";
+import { logger } from "./logger";
 
 async function deposit(
   tornado: Tornado,
