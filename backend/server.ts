@@ -2,7 +2,8 @@ import express from "express";
 import { createTree } from "../utils/tree";
 import { ETHTornado, ETHTornado__factory } from "../typechain-types";
 import MerkleTree from "fixed-merkle-tree";
-import hre from "hardhat";
+import { ethers } from "ethers";
+// import hre from "hardhat";
 // import { run } from "hardhat";
 // import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -20,7 +21,7 @@ app.use(express.json());
 let tree: MerkleTree;
 
 // Initialize provider and contract
-const provider = new hre.ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 const tornadoAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
 const tornado : ETHTornado = ETHTornado__factory.connect(tornadoAddress, provider);
 
