@@ -31,14 +31,6 @@ async function main() {
         commitmentHex: bigIntToHex(commitment)
       };
 
-      //Using server API to deposit
-      // const depositResponse = await axios.post('http://127.0.0.1:3000/deposit', {
-      //   commitment: commitmentHex,
-      //   userAddress: users[i + 1].address
-      // });
-
-      // console.log('Deposit Response:', depositResponse.data);
-
       //WIthout server API
       console.log(`Processing deposit ${i + 1} for user ${users[i + 1].address}`);
       await deposit(
@@ -68,18 +60,6 @@ async function main() {
       // console.log('Merkle Info Response:', merkleInfoResponse.data);
 
       const { root, pathElements, pathIndices } = merkleInfoResponse.data;
-
-      // Perform a withdrawal using server API
-      // const withdrawResponse = await axios.post('http://127.0.0.1:3000/withdraw', {
-      //   nullifier: nullifiers[index],
-      //   secret: secrets[index],
-      //   root,
-      //   pathElements,
-      //   pathIndices,
-      //   userAddress: users[index + 1 + NUM_DEPOSITS].address
-      // });
-
-      // console.log(`Withdraw Response ${index}:`, withdrawResponse.data);
 
       //WIthout server API
       console.log(`Processing withdrawal ${i + 1} for user ${users[index + 1 + NUM_DEPOSITS].address}`);
