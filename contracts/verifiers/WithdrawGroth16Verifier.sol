@@ -34,13 +34,13 @@ contract WithdrawGroth16Verifier {
     uint256 public constant GAMMA_Y2 =
         8495653923123431417604973247489272438418190587263600148770280649306958101930;
     uint256 public constant DELTA_X1 =
-        1484650775917973062673380404978594519377977472970518778685851640362019950808;
+        3782328908584311461075639996136141946155042598660987802326033456886131879860;
     uint256 public constant DELTA_X2 =
-        10719446824705821775459648966768249650107599425531242648288157417304750152671;
+        5353154204030491471259058382652581725537691927811733834684765494422256542006;
     uint256 public constant DELTA_Y1 =
-        3684057257294976761166439772988750112284921385725536829238816247780818105370;
+        17291632257753995554973487183455262189922132008772699818476542500280980646077;
     uint256 public constant DELTA_Y2 =
-        11028228705970463963365187709900141429861386846612194194122913002772062195648;
+        18034522268685746261751139405320008732760172898086036182968894821695835468487;
 
     uint256 public constant IC0_X =
         5954766214921040520521011620453990320723595660029934145665910669969019997015;
@@ -59,9 +59,8 @@ contract WithdrawGroth16Verifier {
     uint256 public constant IC3_Y =
         16294830912333295254050963506269418868460777647969612640645662082231972390427;
     
-    /// @dev memory pointer sizes
-    uint16 public constant P_PUBLIC_SIGNALS_ACCUMULATOR_SIZE = 128;
-    uint16 public constant P_TOTAL_SIZE = 896;
+    /// @dev memory pointer size
+    uint256 public constant P_TOTAL_SIZE = 768;
 
     function verifyProof(
         uint256[2] memory pointA_,
@@ -74,30 +73,23 @@ contract WithdrawGroth16Verifier {
                 res_ := lt(signal_, SCALAR_FIELD_SIZE)
             }
 
-            function g1MulAdd(pR_, x_, y_, s_) -> res_ {
-                let pointer_ := mload(64) // free pointer
+            function g1MulAdd(pointer_, x_, y_, s_) -> res_ {
+                mstore(add(pointer_, 64), x_)
+                mstore(add(pointer_, 96), y_)
+                mstore(add(pointer_, 128), s_)
 
-                mstore(pointer_, x_)
-                mstore(add(pointer_, 32), y_)
-                mstore(add(pointer_, 64), s_)
-
-                res_ := staticcall(6000, 7, pointer_, 96, pointer_, 64) // ecMul
+                res_ := staticcall(6000, 7, add(pointer_, 64), 96, add(pointer_, 64), 64) // ecMul
                 res_ := and(res_, gt(returndatasize(), 0)) // check that multiplication succeeded
 
                 if iszero(res_) {
                     leave
                 }
 
-                mstore(add(pointer_, 64), mload(pR_))
-                mstore(add(pointer_, 96), mload(add(pR_, 32)))
-
-                res_ := staticcall(150, 6, pointer_, 128, pR_, 64) // ecAdd
+                res_ := staticcall(150, 6, pointer_, 128, pointer_, 64) // ecAdd
                 res_ := and(res_, gt(returndatasize(), 0)) // check that addition succeeded
             }
 
             function checkPairing(pA_, pB_, pC_, pubSignals_, pointer_) -> res_ {
-                let pPairing_ := add(pointer_, P_PUBLIC_SIGNALS_ACCUMULATOR_SIZE)
-
                 mstore(pointer_, IC0_X)
                 mstore(add(pointer_, 32), IC0_Y)
 
@@ -112,51 +104,47 @@ contract WithdrawGroth16Verifier {
                     leave
                 }
                 
+                /// @dev gamma2
+                mstore(add(pointer_, 64), GAMMA_X1)
+                mstore(add(pointer_, 96), GAMMA_X2)
+                mstore(add(pointer_, 128), GAMMA_Y1)
+                mstore(add(pointer_, 160), GAMMA_Y2)
+
                 /// @dev -A
-                mstore(pPairing_, mload(pA_))
+                mstore(add(pointer_, 192), mload(pA_))
                 mstore(
-                    add(pPairing_, 32),
+                    add(pointer_, 224),
                     mod(sub(BASE_FIELD_SIZE, mload(add(pA_, 32))), BASE_FIELD_SIZE)
                 )
 
                 /// @dev B
-                mstore(add(pPairing_, 64), mload(mload(pB_)))
-                mstore(add(pPairing_, 96), mload(add(mload(pB_), 32)))
-                mstore(add(pPairing_, 128), mload(mload(add(pB_, 32))))
-                mstore(add(pPairing_, 160), mload(add(mload(add(pB_, 32)), 32)))
+                mstore(add(pointer_, 256), mload(mload(pB_)))
+                mstore(add(pointer_, 288), mload(add(mload(pB_), 32)))
+                mstore(add(pointer_, 320), mload(mload(add(pB_, 32))))
+                mstore(add(pointer_, 352), mload(add(mload(add(pB_, 32)), 32)))
 
                 /// @dev alpha1
-                mstore(add(pPairing_, 192), ALPHA_X)
-                mstore(add(pPairing_, 224), ALPHA_Y)
+                mstore(add(pointer_, 384), ALPHA_X)
+                mstore(add(pointer_, 416), ALPHA_Y)
 
                 /// @dev beta2
-                mstore(add(pPairing_, 256), BETA_X1)
-                mstore(add(pPairing_, 288), BETA_X2)
-                mstore(add(pPairing_, 320), BETA_Y1)
-                mstore(add(pPairing_, 352), BETA_Y2)
-
-                /// @dev public signals
-                mstore(add(pPairing_, 384), mload(pointer_))
-                mstore(add(pPairing_, 416), mload(add(pointer_, 32)))
-
-                /// @dev gamma2
-                mstore(add(pPairing_, 448), GAMMA_X1)
-                mstore(add(pPairing_, 480), GAMMA_X2)
-                mstore(add(pPairing_, 512), GAMMA_Y1)
-                mstore(add(pPairing_, 544), GAMMA_Y2)
+                mstore(add(pointer_, 448), BETA_X1)
+                mstore(add(pointer_, 480), BETA_X2)
+                mstore(add(pointer_, 512), BETA_Y1)
+                mstore(add(pointer_, 544), BETA_Y2)
 
                 /// @dev C
-                mstore(add(pPairing_, 576), mload(pC_))
-                mstore(add(pPairing_, 608), mload(add(pC_, 32)))
+                mstore(add(pointer_, 576), mload(pC_))
+                mstore(add(pointer_, 608), mload(add(pC_, 32)))
 
                 /// @dev delta2
-                mstore(add(pPairing_, 640), DELTA_X1)
-                mstore(add(pPairing_, 672), DELTA_X2)
-                mstore(add(pPairing_, 704), DELTA_Y1)
-                mstore(add(pPairing_, 736), DELTA_Y2)
+                mstore(add(pointer_, 640), DELTA_X1)
+                mstore(add(pointer_, 672), DELTA_X2)
+                mstore(add(pointer_, 704), DELTA_Y1)
+                mstore(add(pointer_, 736), DELTA_Y2)
 
-                res_ := staticcall(181000, 8, pPairing_, 768, pPairing_, 32) // ecPairing
-                res_ := and(res_, mload(pPairing_)) // check that pairing succeeded
+                res_ := staticcall(181000, 8, pointer_, 768, pointer_, 32) // ecPairing
+                res_ := and(res_, mload(pointer_)) // check that pairing succeeded
             }
 
             let pointer_ := mload(64) // free pointer
