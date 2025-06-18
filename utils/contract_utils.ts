@@ -67,7 +67,12 @@ async function withdraw(
       `💰 Recipient balance before withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
     );
     const calldata = await circuit.generateCalldata(proof);
-    await tornadoWithSigner.withdraw(...calldata);
+    const {
+      proofPoints: { a: pointA, b: pointB, c: pointC },
+      publicSignals
+    } = calldata;
+
+    await tornadoWithSigner.withdraw(pointA, pointB, pointC, publicSignals);
     logger.success(
       `🤑 Recipient balance after withdrawal: ${await hre.ethers.provider.getBalance(recipient)}`
     );
